@@ -1,5 +1,3 @@
-import Data.List
-
 step [a,b,c,d,e,f,g,h,i] = [b,c,d,e,f,g,h + a,i,a]
 
 nSteps n = (!! n) . iterate step
