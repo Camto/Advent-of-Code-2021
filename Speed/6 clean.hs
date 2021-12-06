@@ -4,7 +4,7 @@ step [a,b,c,d,e,f,g,h,i] = [b,c,d,e,f,g,h + a,i,a]
 
 nSteps n = (!! n) . iterate step
 
-count n = length . filter (== n)
+count a = length . filter (== a)
 
 main = do
 	input <- readFile "input.txt"
