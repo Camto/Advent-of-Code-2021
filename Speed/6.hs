@@ -1,4 +1,5 @@
 input = [...] -- Paste input here
+count n = length . filter (==n)
 ar = map ((flip count) input) [0..8]
 step [q,w,e,r,t,y,u,i,o] = [w,e,r,t,y,u,i+q,o,q]
 part1 = sum . (!!80) $ iterate step ar
