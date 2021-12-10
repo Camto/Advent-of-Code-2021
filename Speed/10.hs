@@ -4,8 +4,6 @@ import Data.Maybe
 import Control.Monad
 import Data.Bifunctor
 
-open = (`elem` "([{<")
-
 pair q r = q:r:"" `elem` ["()", "[]", "{}", "<>"]
 
 part1Value q = case q of
@@ -33,7 +31,7 @@ second part2CalcScore just evaluates part2CalcScore if the result is Right
 getScore :: String -> Either Int Int
 getScore = second part2CalcScore . foldM loop []
 	where loop stack q =
-		if open q then
+		if q `elem` "([{<" then
 			Right $ q:stack
 		else if pair (head stack) q then
 			Right $ tail stack
