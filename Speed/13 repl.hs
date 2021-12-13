@@ -2,44 +2,6 @@ Ben/PRO/Stu/Advent of Code 2021> ghci
 GHCi, version 8.10.1: https://www.haskell.org/ghc/  :? for help
 macro 'doc' overwrites builtin command.  Use ':def!' to overwrite.
 Loaded GHCi configuration from C:\Users\Camto\AppData\Roaming\ghc\ghci.conf
-Prelude> True && False || True
-Prelude> True && (False || True)
-True
-Prelude> (True && False) || True
-True
-Prelude> False && False || True
-True
-Prelude> False && (False || True)
-False
-Prelude> (False && False) || True
-True
-Prelude> False && False || True
-True
-Prelude> :t \loc -> map snd . filter ((== loc) . fst)
-\loc -> map snd . filter ((== loc) . fst)
-  :: Eq a => a -> [(a, b)] -> [b]
-Prelude> :t first2andswapped [a, b] = [(a, b), (b, a)]
-
-<interactive>:1:25: error: parse error on input `='
-Prelude> first2andswapped [a, b] = [(a, b), (b, a)]
-Prelude> :t (map first2andswapped . words)
-(map first2andswapped . words) :: String -> [[(Char, Char)]]
-Prelude> first2 [a, b] = (a, b)
-Prelude> :t (first2 . words)
-(first2 . words) :: String -> (String, String)
-Prelude> :t (concatMap first2andswapped . words)
-(concatMap first2andswapped . words) :: String -> [(Char, Char)]
-Prelude> :t (first2andswapped . words)
-(first2andswapped . words) :: String -> [(String, String)]
-Prelude> import Data.Set
-Prelude Data.Set>
-
- Session contents restored from 12/12/2021 at 2:43:17 AM 
-
-Ben/PRO/Stu/Advent of Code 2021> ghci
-GHCi, version 8.10.1: https://www.haskell.org/ghc/  :? for help
-macro 'doc' overwrites builtin command.  Use ':def!' to overwrite.
-Loaded GHCi configuration from C:\Users\Camto\AppData\Roaming\ghc\ghci.conf
 Prelude> f<-readFile"Speed/qr.txt"
 Prelude> f
 "6 10\n0 14\n9 10\n0 3\n10 4\n4 11\n6 0\n6 12\n4 1\n0 13\n10 12\n3 4\n3 0\n8 4\n1 10\n2 14\n8 10\n9 0"
