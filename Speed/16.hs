@@ -1,5 +1,5 @@
 import Data.List
-import Data.Bifunctor
+import Control.Arrow
 import Data.Maybe
 
 data Packet = Packet Int Packetdata
@@ -26,9 +26,6 @@ bin2int = foldl' (\n bit -> n*2 + fromEnum bit) 0
 
 chop :: Int -> [a] -> ([a], [a])
 chop n list = (take n list, drop n list)
-
-first2 :: [a] -> (a, a)
-first2 (a:b:_) = (a, b)
 
 parse :: Bits -> Maybe (Parseresult Packet)
 parse (v1:v2:v3: t1:t2:t3: bits) =
@@ -71,9 +68,11 @@ n2op n = case n of
 	1 -> product
 	2 -> minimum
 	3 -> maximum
-	5 -> fromEnum . uncurry (>) . first2
-	6 -> fromEnum . uncurry (<) . first2
-	7 -> fromEnum . uncurry (==) . first2
+	5 -> liftCmp (>)
+	6 -> liftCmp (<)
+	7 -> liftCmp (==)
+
+liftCmp cmp = fromEnum . uncurry cmp . (head &&& last)
 
 totalversions :: Packet -> Int
 totalversions (Packet version (Lit _)) = version
