@@ -14,12 +14,11 @@ hex2bin :: String -> Bits
 hex2bin = concatMap hexdigit2bin
 
 hexdigit2bin :: Char -> Bits
-hexdigit2bin digit = map (== '1') $ case digit of {
+hexdigit2bin digit = map (== '1') $ case digit of
 	'0' -> "0000"; '4' -> "0100"; '8' -> "1000"; 'C' -> "1100";
 	'1' -> "0001"; '5' -> "0101"; '9' -> "1001"; 'D' -> "1101";
 	'2' -> "0010"; '6' -> "0110"; 'A' -> "1010"; 'E' -> "1110";
 	'3' -> "0011"; '7' -> "0111"; 'B' -> "1011"; 'F' -> "1111"
-}
 
 bin2int :: Bits -> Int
 bin2int = foldl' (\n bit -> n*2 + fromEnum bit) 0
