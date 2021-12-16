@@ -2,84 +2,92 @@ import Data.List
 import Data.Bifunctor
 import Data.Maybe
 
-data Packet = Packet {version :: Int, typeid :: Int, packetdata :: PacketData} deriving (Show)
-data PacketData = Lit Int | Op [Packet] deriving (Show)
+data Packet = Packet Int Packetdata
+data Packetdata = Lit Int | Op Packetop [Packet]
+type Packetop = [Int] -> Int
 
-h2b c = case c of
-	'0' -> "0000"
-	'1' -> "0001"
-	'2' -> "0010"
-	'3' -> "0011"
-	'4' -> "0100"
-	'5' -> "0101"
-	'6' -> "0110"
-	'7' -> "0111"
-	'8' -> "1000"
-	'9' -> "1001"
-	'A' -> "1010" 
-	'B' -> "1011"
-	'C' -> "1100"
-	'D' -> "1101"
-	'E' -> "1110"
-	'F' -> "1111"
+type Bits = [Bool]
+type Parseresult a = (a, Bits)
+type Parse a = Bits -> Parseresult a
 
-b2n = foldl' (\n e -> n * 2 + fromEnum e) 0
+hex2bin :: String -> Bits
+hex2bin = concatMap hexdigit2bin
 
-i2b :: String -> [Bool]
-i2b = map (== '1') . concatMap h2b
+hexdigit2bin :: Char -> Bits
+hexdigit2bin digit = map (== '1') $ case digit of {
+	'0' -> "0000"; '4' -> "0100"; '8' -> "1000"; 'C' -> "1100";
+	'1' -> "0001"; '5' -> "0101"; '9' -> "1001"; 'D' -> "1101";
+	'2' -> "0010"; '6' -> "0110"; 'A' -> "1010"; 'E' -> "1110";
+	'3' -> "0011"; '7' -> "0111"; 'B' -> "1011"; 'F' -> "1111"
+}
 
-chop n a = (take n a, drop n a)
+bin2int :: Bits -> Int
+bin2int = foldl' (\n bit -> n*2 + fromEnum bit) 0
 
+chop :: Int -> [a] -> ([a], [a])
+chop n list = (take n list, drop n list)
+
+first2 :: [a] -> (a, a)
 first2 (a:b:_) = (a, b)
 
-parse (a:b:c:x:y:z:p) =
+parse :: Bits -> Maybe (Parseresult Packet)
+parse (v1:v2:v3: t1:t2:t3: bits) =
 	let
-		version = b2n [a,b,c]
-		typeid = b2n [x,y,z]
-		(packetdata, p') = parsetype typeid p
+		version = bin2int [v1,v2,v3]
+		typeid = bin2int [t1,t2,t3]
 	in
-		Just (Packet version typeid packetdata, p')
+		Just . first (Packet version) $ parsedata typeid bits
 parse _ = Nothing
 
-parseall p = case parse p of
-	Just (packet, p') -> packet:(parseall p')
+parsedata :: Int -> Parse Packetdata
+parsedata 4 = first (Lit . bin2int) . parsechunks
+parsedata n = first (Op $ n2op n) . uncurry parsesubpackets . fromJust . uncons
+
+parsechunks :: Parse Bits
+parsechunks (continue:bits) =
+	let (bitgroup, bits') = chop 4 bits in
+	first (bitgroup ++) $ if continue then parsechunks bits' else ([], bits')
+
+parsesubpackets :: Bool -> Parse [Packet]
+parsesubpackets False = first parseall . uncurry chop . first bin2int . chop 15
+parsesubpackets True = uncurry parsen . first bin2int . chop 11
+
+parseall :: Bits -> [Packet]
+parseall bits = case parse bits of
+	Just (packet, bits') -> packet:(parseall bits')
 	Nothing -> []
 
-parsen 0 p = ([], p)
-parsen n p = case parse p of
-	Just (packet, p') -> let (packets, p'') = parsen (n-1) p' in (packet:packets, p'')
-	Nothing -> ([], p)
+parsen :: Int -> Parse [Packet]
+parsen 0 bits = ([], bits)
+parsen n bits = case parse bits of
+	Just (packet, bits') ->
+		let (packets, bits'') = parsen (n-1) bits'
+		in (packet:packets, bits'')
+	Nothing -> ([], bits)
 
-parsetype 4 = first (Lit . b2n) . parselit
-parsetype _ = uncurry parseop . fromJust . uncons
+n2op :: Int -> Packetop
+n2op n = case n of
+	0 -> sum
+	1 -> product
+	2 -> minimum
+	3 -> maximum
+	5 -> fromEnum . uncurry (>) . first2
+	6 -> fromEnum . uncurry (<) . first2
+	7 -> fromEnum . uncurry (==) . first2
 
-parselit (q:a:b:c:d:p) = first ([a,b,c,d] ++) $ if q then parselit p else ([], p)
-parselit p = ([], p)
+totalversions :: Packet -> Int
+totalversions (Packet version (Lit _)) = version
+totalversions (Packet version (Op _ packets)) = (version +) . sum $ map totalversions packets
 
-parseop False p = first (Op . parseall) . uncurry chop . first b2n $ chop 15 p
-parseop True p = first Op . uncurry parsen . first b2n $ chop 11 p
-
-totalversions Packet{version = v, packetdata = pd} = v + rec where
-	rec = case pd of
-		Lit _ -> 0
-		Op packets -> sum $ map totalversions packets
-
-eval Packet{typeid = op, packetdata = pd} = case pd of
+eval :: Packet -> Int
+eval (Packet _ packetdata) = case packetdata of
 	Lit n -> n
-	Op packets ->
-		let
-			ns = map eval packets
-			fn = case op of
-				0 -> sum
-				1 -> product
-				2 -> minimum
-				3 -> maximum
-				5 -> fromEnum . uncurry (>) . first2
-				6 -> fromEnum . uncurry (<) . first2
-				7 -> fromEnum . uncurry (==) . first2
-		in fn ns
+	Op op packets -> op $ map eval packets
 
-parseinput = fst . fromJust . parse . i2b
+parseinput :: String -> Packet
+parseinput = fst . fromJust . parse . hex2bin
 
-part1 = totalversions . parseinput
-part2 = eval . parseinput
+main = do
+	input <- parseinput <$> readFile "input.txt"
+	print $ totalversions input -- Part 1
+	print $ eval input -- Part 2
