@@ -1,7 +1,7 @@
 import Data.List
 
 {-
-Input is to be parsed externally doing these regexes in order, repeated the first one as many times as possible.
+Input is to be parsed externally doing these regexes in order, repeating the first one as many times as possible.
 
 \[([^,]*),([^,]*)\] --> (Pair $1 $2)
 \d+ --> (Num $0)
