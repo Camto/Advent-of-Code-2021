@@ -1,13 +1,39 @@
 import Data.List
 
+type Range = (Int, Int)
+
+tri :: Int -> Int
 tri n = n*(n+1) `div` 2
-trito x s = tri x - tri (max 0 $ x-s)
 
-inrange (by,ty) n = n >= by && n <= ty
+triSteps :: Int -> Int -> Int
+triSteps steps n = tri n - tri (max 0 $ n-steps)
 
-nsteps r n = if n <= 0 then nsteps' r 0 n 0 else nsteps' r 0 (-n-1) (n*2 + 1)
-nsteps' r@(by,_) n v s = if n < by then [] else (if inrange r n then (s:) else id) $ nsteps' r (n+v) (v-1) (s+1)
+inRange :: Range -> Int -> Bool
+inRange (lower,upper) n = n >= lower && n <= upper
+
+nSteps :: Range -> Int -> [Int]
+nSteps yRange yv =
+	if yv <= 0
+	then nSteps' yRange 0 yv
+	else map ((yv*2 + 1) +) $ nSteps' yRange 0 (-yv-1)
+
+nSteps' :: Range -> Int -> Int -> [Int]
+nSteps' yRange@(by,_) yPos yv =
+	(\(steps, _, _, _) -> steps) $ until
+		(\(_, yPos, _, _) -> yPos < by)
+		(\(steps, yPos, yv, nSteps) ->
+			let steps' = if inRange yRange yPos then nSteps:steps else steps
+			in (steps', yPos+yv, yv-1, nSteps+1))
+		([], yPos, yv, 0)
+
+xvReachesInSteps :: Range -> Int -> Int -> Bool
+xvReachesInSteps xRange steps = inRange xRange . triSteps steps
+
+findXvsMatchingYv :: Range -> Range -> Int -> [Int]
+findXvsMatchingYv xRange@(_,bx) yRange yv =
+	concatMap (\steps -> filter (xvReachesInSteps xRange steps) [1..bx]) $
+		nSteps yRange yv
 
 part1 _ (by,_) = tri $ -by-1
 
-part2 xr@(_,bx) yr@(by,_) = length . nub . map snd . concatMap (\yv -> filter (inrange xr . fst) . concatMap (\s -> map (\xv -> (trito xv s, (xv, yv))) [1..bx]) $ nsteps yr yv) $ [by .. -by-1]
+part2 xRange yRange@(by,_) = length . concatMap (nub . findXvsMatchingYv xRange yRange) $ [by .. -by-1]
